@@ -5,6 +5,25 @@ Citizen.CreateThread(function()
     end
 end)
 
+local blips = {
+    {title="Épicerie", colour=2, id=52, x = 25.742, y = -1345.741, z = 28.497, heading = 269.00},
+    {title="Épicerie", colour=2, id=52, x = -1221.6917, y = -908.2432, z = 11.3264, heading = 34.3346},
+    {title="Épicerie", colour=2, id=52, x = 1164.9121, y = -323.5320, z = 68.2051, heading = 99.4284},
+    {title="Épicerie", colour=2, id=52, x = 1134.1248, y = -982.4278, z = 45.4158, heading = 280.9229},
+    {title="Épicerie", colour=2, id=52, x = -47.3156, y =-1758.6967, z = 28.4210, heading = 47.0666},
+    {title="Épicerie", colour=2, id=52, x = 2555.5496, y = 380.8320, z = 107.6230, heading = 354.7616},
+    {title="Épicerie", colour=2, id=52, x = 372.9843, y = 328.0479, z = 102.5664, heading = 258.4908},
+    {title="Épicerie", colour=2, id=52, x = -1486.1849, y = -377.9953, z = 39.1634, heading = 140.8673},
+    {title="Épicerie", colour=2, id=52, x = -706.0665, y = -914.5851, z = 18.2156, heading = 82.1365},
+    {title="Épicerie", colour=2, id=52, x = -1819.4995, y = 793.4821, z = 137.0861, heading = 132.3013},
+    {title="Épicerie", colour=2, id=52, x = -3040.5439, y = 583.9594, z = 6.9089, heading = 11.4733},
+    {title="Épicerie", colour=2, id=52, x = 1392.5419, y = 3606.4106, z = 33.9809, heading = 197.8766},
+    {title="Épicerie", colour=2, id=52, x = 1959.2020, y = 3741.5881, z = 31.3438, heading = 303.2496},
+    {title="Épicerie", colour=2, id=52, x = 549.2612, y = 2669.7007, z = 41.1565, heading = 97.9101},
+    {title="Épicerie", colour=2, id=52, x = 1728.6167, y =6416.7959, z = 34.0372, heading = 243.9244},
+
+}
+
 -- Menu --
 
 local mainMenu = RageUI.CreateMenu("Superette", "SHOP")
@@ -27,12 +46,10 @@ mainMenu.Closed = function() open = false end
 function shop()
     if open then
         open = false
-            CamStop()
             RageUI.Visible(mainMenu, false)
         return
     else
         open = true
-            CamActive()
             RageUI.Visible(mainMenu, true)
         Citizen.CreateThread(function()
             while open do
@@ -92,10 +109,14 @@ function shop()
     end
 end
 
+nourritures.Closed = function() end
+boissons.Closed = function() end
+divers.Closed = function() end
+
 Citizen.CreateThread(function()
     while true do
       local wait = 1000
-        for k,v in pairs(Config.Position) do
+        for k,v in pairs(blips) do
             local plyCoords = GetEntityCoords(GetPlayerPed(-1), false)
             local dist = Vdist(plyCoords.x, plyCoords.y, plyCoords.z, v.x, v.y, v.z)
             if dist <= 2.0 then
@@ -110,41 +131,22 @@ Citizen.CreateThread(function()
     end
 end)
 
-function CamActive()
-    cam = CreateCam("DEFAULT_SCRIPTED_Camera", 1)
-    SetCamCoord(cam, 25.0418, -1345.6079, 30.0002, 91.6392, true, 0)
-    RenderScriptCams(500, 100, 1000, 1000, 100)
-    PointCamAtCoord(cam, 22.2166, -1345.7028, 30.3170)
-    DisplayRadar(false)
-end
-
-function CamStop()
-    RenderScriptCams(false, true, 500, true, true)
-    SetCamActive(cam, false)
-    DestroyAllCams(true)
-    DisplayRadar(false)
-end
-
-nourritures.Closed = function() end
-boissons.Closed = function() end
-divers.Closed = function() end
-
 -- Fin Functions --
 
 -- Blips & Ped --
 
-Citizen.CreateThread(function() 
-    for k, v in pairs(Config.Position) do 
-        local blip = AddBlipForCoord(v.x, v.y, v.z)
-            SetBlipSprite  (blip, Config.blipsprite)
-            SetBlipDisplay (blip, Config.blipdisplay)
-            SetBlipScale   (blip, Config.blipscale)
-            SetBlipColour  (blip, Config.blipcolour)
-            SetBlipAsShortRange(blip, true) 
-            BeginTextCommandSetBlipName('STRING') 
-            AddTextComponentSubstringPlayerName(Config.blipname)
-            EndTextCommandSetBlipName(blip) 
-    end 
+Citizen.CreateThread(function()
+    for _, info in pairs(blips) do
+        info.blip = AddBlipForCoord(info.x, info.y, info.z)
+        SetBlipSprite(info.blip, info.id)
+        SetBlipDisplay(info.blip, 4)
+        SetBlipScale(info.blip, 0.9)
+        SetBlipColour(info.blip, info.colour)
+        SetBlipAsShortRange(info.blip, true)
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentString(info.title)
+        EndTextCommandSetBlipName(info.blip)
+    end
 end)
 
 
@@ -154,8 +156,10 @@ Citizen.CreateThread(function()
     RequestModel(hash)
     Wait(20)
     end
-    ped = CreatePed("PED_TYPE_CIVFEMALE", "g_m_m_korboss_01", 24.3528, -1345.7141, 28.4970, 269.0016, false, true)
+    for _, infos in pairs(blips) do
+    ped = CreatePed("PED_TYPE_CIVFEMALE", "g_m_m_korboss_01", infos.x, infos.y, infos.z, infos.heading, false, true)
     SetBlockingOfNonTemporaryEvents(ped, 1)
     FreezeEntityPosition(ped, 1)
     SetEntityInvincible(ped, 1)
+    end
 end)
